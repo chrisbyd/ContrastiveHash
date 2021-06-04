@@ -6,14 +6,17 @@ from .msmt17 import MSMT17
 from .personx import PersonX
 from .veri import VeRi
 from .dukemtmcreid import DukeMTMCreID
-
+from .cifar101 import Cifar101
+from .imagenet import Imagenet
 
 __factory = {
     'market1501': Market1501,
     'msmt17': MSMT17,
     'personx': PersonX,
     'veri': VeRi,
-    'dukemtmcreid': DukeMTMCreID
+    'dukemtmcreid': DukeMTMCreID,
+    'cifar': Cifar101,
+    'imagenet': Imagenet
 }
 
 
