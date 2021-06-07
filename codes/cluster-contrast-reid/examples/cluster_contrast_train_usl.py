@@ -124,6 +124,12 @@ def main_worker(args):
     iters = args.iters if (args.iters > 0) else None
     print("==> Load unlabeled dataset")
     dataset = get_data(args.dataset, args.data_dir)
+    print('---------------Dataset name is {}-----------------'.format(args.dataset))
+    print('---Dataset has {} training images---'.format(dataset.num_train_imgs))
+    print('---Dataset has {} query images---'.format(dataset.num_query_imgs))
+    print('---Dataset has {} gallery images---'.format(dataset.num_gallery_imgs))
+    print('---Dataset has {} number of classes---'.format(dataset.num_gallery_pids))
+  
     test_loader = get_test_loader(dataset, args.height, args.width, args.batch_size, args.workers)
 
     # Create model
@@ -230,9 +236,9 @@ def main_worker(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Self-paced contrastive learning on unsupervised re-ID")
-    # data
-    parser.add_argument('-d', '--dataset', type=str, default='dukemtmcreid',
-                        choices=datasets.names())
+    # data  for hashing choices are ['cifar', 'imagenet']
+    parser.add_argument('-d', '--dataset', type=str, default='cifar',
+                        choices=datasets.names()) 
     parser.add_argument('-b', '--batch-size', type=int, default=2)
     parser.add_argument('-j', '--workers', type=int, default=4)
     parser.add_argument('--height', type=int, default=256, help="input height")

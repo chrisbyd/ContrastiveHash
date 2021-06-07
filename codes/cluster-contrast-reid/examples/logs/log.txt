@@ -1,0 +1,9 @@
+==========
+Args:Namespace(arch='resnet_ibn50a', batch_size=10, data_dir='/home/chris/research_work/my_work/ContrastiveHash/codes/cluster-contrast-reid/examples/data', dataset='cifar', dropout=0, epochs=50, eps=0.6, eps_gap=0.02, eval_step=10, features=0, height=256, iters=400, k1=30, k2=6, logs_dir='/home/chris/research_work/my_work/ContrastiveHash/codes/cluster-contrast-reid/examples/logs', lr=0.00035, momentum=0.1, num_instances=16, pooling_type='gem', print_freq=10, seed=1, step_size=20, temp=0.05, use_hard=True, weight_decay=0.0005, width=128, workers=4)
+==========
+==> Load unlabeled dataset
+---------------Dataset name is cifar-----------------
+---Dataset has 5000 training images---
+---Dataset has 1000 query images---
+---Dataset has 54000 gallery images---
+---Dataset has 10 number of classes---

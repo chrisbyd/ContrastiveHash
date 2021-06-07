@@ -12,45 +12,16 @@ def get_base_config_from_dataset_name(datasetname: str):
 
 
 def config_dataset(config):
-    prefix = '/home/chris/research_dataset/hash_dataset'
     if config['dataset'] == 'cifar10':
-        config["data_path"] = prefix + "/cifar10/"
+        config["data_path"] = './data' + "/cifar10/"
     if config['dataset'] == 'imagenet':
-        config["data_path"] = prefix+"/imagenet/"
+        config["data_path"] = './data' +"/imagenet/"
 
     config["data"] = {
-        "train_set": {"list_path": config['dataset'] + "train.txt"},
-        "database": {"list_path":  config["dataset"] + "database.txt"},
-        "test": {"list_path":  config["dataset"] + "test.txt"}}
+        "train_set": {"list_path": config['data_path'] + "train.txt"},
+        "database": {"list_path":  config["data_path"] + "database.txt"},
+        "test": {"list_path":  config["data_path"] + "test.txt"}}
     return config
-
-class ImageList(object):
-
-    def __init__(self, data_path, image_list, transform):
-        self.imgs = [(data_path + val.split()[0], np.array([int(la) for la in val.split()[1:]])) for val in image_list]
-        self.transform = transform
-
-    def __getitem__(self, index):
-        path, target = self.imgs[index]
-        img = Image.open(path).convert('RGB')
-        img = self.transform(img)
-        return img, target, index
-
-    def __len__(self):
-        return len(self.imgs)
-
-
-class ImageListWOTransform(object):
-    def __init__(self, data_path, image_list):
-        self.imgs = [(data_path + val.split()[0], np.array([int(la) for la in val.split()[1:]])) for val in image_list]
-
-    def __getitem__(self, index):
-        path, target = self.imgs[index]
-        # img = Image.open(path).convert('RGB')
-        return path, target, index
-
-    def __len__(self):
-        return len(self.imgs)
 
 
 def image_transform(resize_size, crop_size, data_set):
@@ -66,36 +37,6 @@ def image_transform(resize_size, crop_size, data_set):
                                ])
 
 
-def get_data(config):
-
-    dsets = {}
-    dset_loaders = {}
-    data_config = config["data"]
-
-    for data_set in ["train_set", "test", "database"]:
-        dsets[data_set] = ImageList(config["data_path"],
-                                    open(data_config[data_set]["list_path"]).readlines(),
-                                    transform=image_transform(config["resize_size"], config["crop_size"], data_set))
-        print(data_set, len(dsets[data_set]))
-        dset_loaders[data_set] = util_data.DataLoader(dsets[data_set],
-                                                      batch_size=data_config[data_set]["batch_size"],
-                                                      shuffle=True, num_workers=4)
-
-    return dset_loaders["train_set"], dset_loaders["test"], dset_loaders["database"], \
-           len(dsets["train_set"]), len(dsets["test"]), len(dsets["database"])
-
 
 def onehot_to_int(v):
     return v.index(1)
-
-def get_data_without_transform(config):
-    dsets = {}
-    data_config = config["data"]
-
-    for data_set in ["train_set", "test"]:
-        dsets[data_set] = ImageListWOTransform(config["data_path"],
-                                    open(data_config[data_set]["list_path"]).readlines())
-        print(data_set, len(dsets[data_set]))
-
-    return dsets["train_set"], dsets["test"],  \
-           len(dsets["train_set"]), len(dsets["test"])

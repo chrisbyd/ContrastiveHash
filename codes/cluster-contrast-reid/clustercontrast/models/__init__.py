@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 from .resnet import *
 from .resnet_ibn import *
+from .alexnet import AlexNet
 __factory = {
     'resnet18': resnet18,
     'resnet34': resnet34,
@@ -10,6 +11,7 @@ __factory = {
     'resnet152': resnet152,
     'resnet_ibn50a': resnet_ibn50a,
     'resnet_ibn101a': resnet_ibn101a,
+    'alexnnet' : AlexNet
 }
 
 

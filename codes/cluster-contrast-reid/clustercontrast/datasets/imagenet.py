@@ -8,7 +8,7 @@ import os.path as osp
 import numpy as np
 
 from ..utils.data import BaseImageDataset
-from .adapter_helper import get_base_config_from_dataset_name, get_data_without_transform, config_dataset
+from .adapter_helper import config_dataset
 
 class Imagenet(BaseImageDataset):
     """
@@ -23,44 +23,26 @@ class Imagenet(BaseImageDataset):
 
     def __init__(self, root, verbose=True, **kwargs):
         super(Imagenet, self).__init__()
-        config = get_base_config_from_dataset_name('imagenet')
+        config = {"dataset": "imagenet"}
         config = config_dataset(config)
-        train_imagelist, test_imagelist, num_train, num_test = get_data_without_transform(config)
-        train = self.process_imagelist(train_imagelist, relabel=True)
-        test = self.process_dir(test_imagelist, relabel=False)
+         
+        self.train = self.get_data_items(config['data_path'],config['data']['train_set']['list_path'])
+        self.query = self.get_data_items(config['data_path'],config['data']['test']['list_path'])
+        self.gallery = self.get_data_items(config['data_path'],config['data']['database']['list_path'])
+        self.num_train_pids, self.num_train_imgs, self.num_train_cams = self.get_imagedata_info(self.train)
+        self.num_query_pids, self.num_query_imgs, self.num_query_cams = self.get_imagedata_info(self.query)
+        self.num_gallery_pids, self.num_gallery_imgs, self.num_gallery_cams = self.get_imagedata_info(self.gallery)
 
-        self.train = train
-        self.query = []
-        self.gallery = test
 
-    def process_imagelist(self, imagelist, relabel=False):
-        datasets = []
-        for img, target, index in imagelist:
-            datasets.append((img, np.argmax(target), 0))
-        return datasets
-
-    def process_dir(self, dir_path, relabel=False):
-        img_paths = glob.glob(osp.join(dir_path, '*.jpg'))
-        pattern = re.compile(r'([-\d]+)_c([-\d]+)')
-
-        pid_container = set()
-        for img_path in img_paths:
-            pid, _ = map(int, pattern.search(img_path).groups())
-            if pid == -1:
-                continue  # junk images are just ignored
-            pid_container.add(pid)
-        pid2label = {pid: label for label, pid in enumerate(pid_container)}
-
-        dataset = []
-        for img_path in img_paths:
-            pid, camid = map(int, pattern.search(img_path).groups())
-            if pid == -1:
-                continue  # junk images are just ignored
-            assert 0 <= pid <= 776  # pid == 0 means background
-            assert 1 <= camid <= 20
-            camid -= 1  # index starts from 0
-            if relabel:
-                pid = pid2label[pid]
-            dataset.append((img_path, pid, camid))
-
-        return dataset
+    
+    def get_data_items(self,data_path, list_path):
+        dataset_items = []
+        image_lists = open(list_path).readlines()
+        
+        for line in image_lists:
+            image_path = data_path + line.split()[0]
+            target = np.array([int(la) for la in line.split()[1:]])
+            target = np.argmax(target)
+            dataset_items.append((image_path, target, 0))
+        
+        return dataset_items
