@@ -3,7 +3,8 @@ from torchvision import models
 
 
 class AlexNet(nn.Module):
-    def __init__(self, hash_bit, pretrained=True):
+    def __init__(self, num_bits = 16,cut_at_pooling=False,
+                 num_features=0, norm=False, dropout=0, num_classes=0, pooling_type='avg', pretrained=True):
         super(AlexNet, self).__init__()
 
         model_alexnet = models.alexnet(pretrained=pretrained)
@@ -15,6 +16,7 @@ class AlexNet(nn.Module):
         cl2 = nn.Linear(4096, 4096)
         cl2.weight = model_alexnet.classifier[4].weight
         cl2.bias = model_alexnet.classifier[4].bias
+        self.num_features = num_bits
 
         self.hash_layer = nn.Sequential(
             nn.Dropout(),
@@ -23,10 +25,11 @@ class AlexNet(nn.Module):
             nn.Dropout(),
             cl2,
             nn.ReLU(inplace=True),
-            nn.Linear(4096, hash_bit),
+            nn.Linear(4096, num_bits),
         )
 
     def forward(self, x):
+ 
         x = self.features(x)
         x = x.view(x.size(0), 256 * 6 * 6)
         x = self.hash_layer(x)

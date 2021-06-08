@@ -39,7 +39,7 @@ def get_data(name, data_dir):
     return dataset
 
 
-def get_train_loader(args, dataset, height, width, batch_size, workers,
+def get_train_loader(args, dataset, height, width, crop_size, batch_size, workers,
                      num_instances, iters, trainset=None):
 
     normalizer = T.Normalize(mean=[0.485, 0.456, 0.406],
@@ -49,7 +49,7 @@ def get_train_loader(args, dataset, height, width, batch_size, workers,
         T.Resize((height, width), interpolation=3),
         T.RandomHorizontalFlip(p=0.5),
         T.Pad(10),
-        T.RandomCrop((height, width)),
+        T.RandomCrop(crop_size),
         T.ToTensor(),
         normalizer,
         T.RandomErasing(probability=0.5, mean=[0.485, 0.456, 0.406])
@@ -69,19 +69,20 @@ def get_train_loader(args, dataset, height, width, batch_size, workers,
     return train_loader
 
 
-def get_test_loader(dataset, height, width, batch_size, workers, testset=None):
+def get_test_loader(dataset, height, width,crop_size,batch_size, workers, testset=None):
     normalizer = T.Normalize(mean=[0.485, 0.456, 0.406],
                              std=[0.229, 0.224, 0.225])
 
     test_transformer = T.Compose([
         T.Resize((height, width), interpolation=3),
         T.ToTensor(),
+        T.CenterCrop(crop_size),
         normalizer
     ])
 
     if testset is None:
         testset = list(set(dataset.query) | set(dataset.gallery))
-
+   
     test_loader = DataLoader(
         Preprocessor(testset, root=dataset.images_dir, transform=test_transformer),
         batch_size=batch_size, num_workers=workers,
@@ -91,7 +92,7 @@ def get_test_loader(dataset, height, width, batch_size, workers, testset=None):
 
 
 def create_model(args):
-    model = models.create(args.arch, num_features=args.features, norm=True, dropout=args.dropout,
+    model = models.create(args.arch,num_bits = args.hash_bit ,num_features=args.features, norm=True, dropout=args.dropout,
                           num_classes=0, pooling_type=args.pooling_type)
     # use CUDA
     model.cuda()
@@ -129,9 +130,8 @@ def main_worker(args):
     print('---Dataset has {} query images---'.format(dataset.num_query_imgs))
     print('---Dataset has {} gallery images---'.format(dataset.num_gallery_imgs))
     print('---Dataset has {} number of classes---'.format(dataset.num_gallery_pids))
-  
-    test_loader = get_test_loader(dataset, args.height, args.width, args.batch_size, args.workers)
-
+    test_loader = get_test_loader(dataset, args.height, args.width, args.crop_size,args.batch_size, args.workers)
+    
     # Create model
     model = create_model(args)
 
@@ -149,7 +149,7 @@ def main_worker(args):
     for epoch in range(args.epochs):
         with torch.no_grad():
             print('==> Create pseudo labels for unlabeled data')
-            cluster_loader = get_test_loader(dataset, args.height, args.width,
+            cluster_loader = get_test_loader(dataset, args.height, args.width, args.crop_size,
                                              args.batch_size, args.workers, testset=sorted(dataset.train))
 
             features, _ = extract_features(model, cluster_loader, print_freq=50)
@@ -201,7 +201,7 @@ def main_worker(args):
 
         print('==> Statistics for epoch {}: {} clusters'.format(epoch, num_cluster))
 
-        train_loader = get_train_loader(args, dataset, args.height, args.width,
+        train_loader = get_train_loader(args, dataset, args.height, args.width, args.crop_size,
                                         args.batch_size, args.workers, args.num_instances, iters,
                                         trainset=pseudo_labeled_dataset)
 
@@ -242,7 +242,8 @@ if __name__ == '__main__':
     parser.add_argument('-b', '--batch-size', type=int, default=2)
     parser.add_argument('-j', '--workers', type=int, default=4)
     parser.add_argument('--height', type=int, default=256, help="input height")
-    parser.add_argument('--width', type=int, default=128, help="input width")
+    parser.add_argument('--width', type=int, default=256, help="input width")
+    parser.add_argument('--crop_size', type=int, default=224, help="crop size")
     parser.add_argument('--num-instances', type=int, default=4,
                         help="each minibatch consist of "
                              "(batch_size // num_instances) identities, and "
@@ -259,9 +260,10 @@ if __name__ == '__main__':
                         help="hyperparameter for jaccard distance")
 
     # model
-    parser.add_argument('-a', '--arch', type=str, default='resnet50',
+    parser.add_argument('-a', '--arch', type=str, default='alexnet',
                         choices=models.names())
     parser.add_argument('--features', type=int, default=0)
+    parser.add_argument('--hash-bit', type=int, default=16)
     parser.add_argument('--dropout', type=float, default=0)
     parser.add_argument('--momentum', type=float, default=0.2,
                         help="update momentum for the hybrid memory")

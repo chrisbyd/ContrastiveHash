@@ -1,0 +1,18 @@
+channels:
+  - defaults
+show_channel_urls: true
+channel_alias: https://anaconda.mirrors.sjtug.sjtu.edu.cn/
+default_channels:
+  - https://anaconda.mirrors.sjtug.sjtu.edu.cn/pkgs/main
+  - https://anaconda.mirrors.sjtug.sjtu.edu.cn/pkgs/free
+  - https://anaconda.mirrors.sjtug.sjtu.edu.cn/pkgs/mro
+  - https://anaconda.mirrors.sjtug.sjtu.edu.cn/pkgs/msys2
+  - https://anaconda.mirrors.sjtug.sjtu.edu.cn/pkgs/pro
+  - https://anaconda.mirrors.sjtug.sjtu.edu.cn/pkgs/r
+custom_channels:
+  conda-forge: https://anaconda.mirrors.sjtug.sjtu.edu.cn/conda-forge
+  soumith: https://anaconda.mirrors.sjtug.sjtu.edu.cn/cloud/soumith
+  bioconda: https://anaconda.mirrors.sjtug.sjtu.edu.cn/cloud/bioconda
+  menpo: https://anaconda.mirrors.sjtug.sjtu.edu.cn/cloud/menpo
+  viscid-hub: https://anaconda.mirrors.sjtug.sjtu.edu.cn/cloud/viscid-hub
+  atztogo: https://anaconda.mirrors.sjtug.sjtu.edu.cn/cloud/atztogo
