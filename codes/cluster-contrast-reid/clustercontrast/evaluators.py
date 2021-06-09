@@ -7,7 +7,7 @@ import torch
 import random
 import copy
 
-from .evaluation_metrics import cmc, mean_ap
+from .evaluation_metrics import mean_ap
 from .utils.meters import AverageMeter
 from .utils.rerank import re_ranking
 from .utils import to_torch
@@ -72,38 +72,17 @@ def pairwise_distance(features, query=None, gallery=None):
     return dist_m, x.numpy(), y.numpy()
 
 
-def evaluate_all(query_features, gallery_features, distmat, query=None, gallery=None,
-                 query_ids=None, gallery_ids=None,
-                 query_cams=None, gallery_cams=None,
-                 cmc_topk=(1, 5, 10), cmc_flag=False):
-    if query is not None and gallery is not None:
-        query_ids = [pid for _, pid, _ in query]
-        gallery_ids = [pid for _, pid, _ in gallery]
-        query_cams = [cam for _, _, cam in query]
-        gallery_cams = [cam for _, _, cam in gallery]
-    else:
-        assert (query_ids is not None and gallery_ids is not None
-                and query_cams is not None and gallery_cams is not None)
+def evaluate_all(query_features, gallery_features, distmat, query=None, gallery=None):
+   
+    query_ids = [pid for _, pid, _ in query]
+    gallery_ids = [pid for _, pid, _ in gallery]
+
 
     # Compute mean AP
-    mAP = mean_ap(distmat, query_ids, gallery_ids, query_cams, gallery_cams)
-    print('Mean AP: {:4.1%}'.format(mAP))
+    mAP = mean_ap(distmat, query_ids, gallery_ids)
+    print('----Mean AP-----: {:4.1%}'.format(mAP))
 
-    if (not cmc_flag):
-        return mAP
-
-    cmc_configs = {
-        'market1501': dict(separate_camera_set=False,
-                           single_gallery_shot=False,
-                           first_match_break=True),}
-    cmc_scores = {name: cmc(distmat, query_ids, gallery_ids,
-                            query_cams, gallery_cams, **params)
-                  for name, params in cmc_configs.items()}
-
-    print('CMC Scores:')
-    for k in cmc_topk:
-        print('  top-{:<4}{:12.1%}'.format(k, cmc_scores['market1501'][k-1]))
-    return cmc_scores['market1501'], mAP
+    return  mAP
 
 
 class Evaluator(object):
@@ -111,16 +90,16 @@ class Evaluator(object):
         super(Evaluator, self).__init__()
         self.model = model
 
-    def evaluate(self, data_loader, query, gallery, cmc_flag=False, rerank=False):
+    def evaluate(self, data_loader, query, gallery , rerank=False):
         features, _ = extract_features(self.model, data_loader)
         distmat, query_features, gallery_features = pairwise_distance(features, query, gallery)
-        results = evaluate_all(query_features, gallery_features, distmat, query=query, gallery=gallery, cmc_flag=cmc_flag)
+        results = evaluate_all(query_features, gallery_features, distmat, query=query, gallery=gallery)
 
         if (not rerank):
             return results
 
-        print('Applying person re-ranking ...')
-        distmat_qq, _, _ = pairwise_distance(features, query, query)
-        distmat_gg, _, _ = pairwise_distance(features, gallery, gallery)
-        distmat = re_ranking(distmat.numpy(), distmat_qq.numpy(), distmat_gg.numpy())
+        # print('Applying person re-ranking ...')
+        # distmat_qq, _, _ = pairwise_distance(features, query, query)
+        # distmat_gg, _, _ = pairwise_distance(features, gallery, gallery)
+        # distmat = re_ranking(distmat.numpy(), distmat_qq.numpy(), distmat_gg.numpy())
         return evaluate_all(query_features, gallery_features, distmat, query=query, gallery=gallery, cmc_flag=cmc_flag)

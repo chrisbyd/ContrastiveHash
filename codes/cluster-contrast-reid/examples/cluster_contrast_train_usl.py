@@ -140,7 +140,8 @@ def main_worker(args):
 
     # Optimizer
     params = [{"params": [value]} for _, value in model.named_parameters() if value.requires_grad]
-    optimizer = torch.optim.Adam(params, lr=args.lr, weight_decay=args.weight_decay)
+    #optimizer = torch.optim.Adam(params, lr=args.lr, weight_decay=args.weight_decay)
+    optimizer = torch.optim.SGD(params, lr= args.lr)
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=0.1)
 
     # Trainer
@@ -148,6 +149,7 @@ def main_worker(args):
 
     for epoch in range(args.epochs):
         with torch.no_grad():
+            print('The batch size is {}'.format(args.batch_size))
             print('==> Create pseudo labels for unlabeled data')
             cluster_loader = get_test_loader(dataset, args.height, args.width, args.crop_size,
                                              args.batch_size, args.workers, testset=sorted(dataset.train))
@@ -211,7 +213,7 @@ def main_worker(args):
                       print_freq=args.print_freq, train_iters=len(train_loader))
 
         if (epoch + 1) % args.eval_step == 0 or (epoch == args.epochs - 1):
-            mAP = evaluator.evaluate(test_loader, dataset.query, dataset.gallery, cmc_flag=False)
+            mAP = evaluator.evaluate(test_loader, dataset.query, dataset.gallery)
             is_best = (mAP > best_mAP)
             best_mAP = max(mAP, best_mAP)
             save_checkpoint({
@@ -239,7 +241,7 @@ if __name__ == '__main__':
     # data  for hashing choices are ['cifar', 'imagenet']
     parser.add_argument('-d', '--dataset', type=str, default='cifar',
                         choices=datasets.names()) 
-    parser.add_argument('-b', '--batch-size', type=int, default=2)
+    parser.add_argument('-b', '--batch-size', type=int, default=400)
     parser.add_argument('-j', '--workers', type=int, default=4)
     parser.add_argument('--height', type=int, default=256, help="input height")
     parser.add_argument('--width', type=int, default=256, help="input width")
@@ -277,7 +279,7 @@ if __name__ == '__main__':
     # training configs
     parser.add_argument('--seed', type=int, default=1)
     parser.add_argument('--print-freq', type=int, default=10)
-    parser.add_argument('--eval-step', type=int, default=10)
+    parser.add_argument('--eval-step', type=int, default=2)
     parser.add_argument('--temp', type=float, default=0.05,
                         help="temperature for scaling contrastive loss")
     # path
