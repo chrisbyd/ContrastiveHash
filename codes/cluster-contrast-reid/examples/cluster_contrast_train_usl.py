@@ -230,7 +230,7 @@ def main_worker(args):
     print('==> Test with the best model:')
     checkpoint = load_checkpoint(osp.join(args.logs_dir, 'model_best.pth.tar'))
     model.load_state_dict(checkpoint['state_dict'])
-    evaluator.evaluate(test_loader, dataset.query, dataset.gallery, cmc_flag=True)
+    evaluator.evaluate(test_loader, dataset.query, dataset.gallery)
 
     end_time = time.monotonic()
     print('Total running time: ', timedelta(seconds=end_time - start_time))
